@@ -41,41 +41,40 @@ The private portion is encrypted and signed with a private key shared between th
 
 Prior to encryption the private connect token data has the following binary format.
 
-    [client id] (uint64) // globally unique identifier for an authenticated client
-    [timeout seconds] (uint32) // timeout in seconds. negative values disable timeout (dev only)
-    [num server addresses] (uint32) // in [1,32]
-    <for each server address>
+    [8]  [client id] (uint64) // globally unique identifier for an authenticated client
+    [4]  [timeout seconds] (uint32) // timeout in seconds. negative values disable timeout (dev only)
+    [32] [client to server key] (32 bytes)
+    [32] [server to client key] (32 bytes)
+    [256][user data] (256 bytes) // user defined data specific to this protocol id
+    [2]  [num server addresses] (uint16) // in [1,10]
+    [7/19] <for each server address>
     {
-        [address type] (uint8) // value of 1 = IPv4 address, 2 = IPv6 address.
-        <if IPV4 address>
+        [1] [address type] (uint8) // value of 1 = IPv4 address, 2 = IPv6 address.
+        [4] <if IPV4 address>
         {
             // for a given IPv4 address: a.b.c.d:port
-            [a] (uint8)
-            [b] (uint8)
-            [c] (uint8)
-            [d] (uint8)
-            [port] (uint16)
+            [1] [a] (uint8)
+            [1] [b] (uint8)
+            [1] [c] (uint8)
+            [1] [d] (uint8)
         }
-        <else IPv6 address>
+        [16] <else IPv6 address>
         {
             // for a given IPv6 address: [a:b:c:d:e:f:g:h]:port
-            [a] (uint16)
-            [b] (uint16)
-            [c] (uint16)
-            [d] (uint16)
-            [e] (uint16)
-            [f] (uint16)
-            [g] (uint16)
-            [h] (uint16)
-            [port] (uint16)
+            [2] [a] (uint16)
+            [2] [b] (uint16)
+            [2] [c] (uint16)
+            [2] [d] (uint16)
+            [2] [e] (uint16)
+            [2] [f] (uint16)
+            [2] [g] (uint16)
+            [2] [h] (uint16)
         }
+        [2] [port] (uint16)
     }
-    [client to server key] (32 bytes)
-    [server to client key] (32 bytes)
-    [user data] (256 bytes) // user defined data specific to this protocol id
-    <zero pad to 1024 bytes>
+    <zero pad to 512 (was 1024) bytes>
 
-This data is variable size but for simplicity is written to a fixed size buffer of 1024 bytes. Unused bytes are zero padded.
+This data is variable size but for simplicity is written to a fixed size buffer of <s>1024</s> **512** bytes. Unused bytes are zero padded.
 
 Encryption of the private connect token data is performed with the libsodium AEAD primitive *crypto_aead_xchacha20poly1305_ietf_encrypt* using the following binary data as the _associated data_: 
 
@@ -99,8 +98,10 @@ Together the public and private data form a _connect token_:
     [create timestamp] (uint64)     // 64 bit unix timestamp when this connect token was created
     [expire timestamp] (uint64)     // 64 bit unix timestamp when this connect token expires
     [connect token nonce] (24 bytes)
-    [encrypted private connect token data] (1024 bytes)
+    [encrypted private connect token data] (512 bytes)
     [timeout seconds] (uint32)      // timeout in seconds. negative values disable timeout (dev only)
+    [client to server key] (32 bytes)
+    [server to client key] (32 bytes)
     [num_server_addresses] (uint32) // in [1,32]
     <for each server address>
     {
@@ -128,8 +129,6 @@ Together the public and private data form a _connect token_:
             [port] (uint16)
         }
     }
-    [client to server key] (32 bytes)
-    [server to client key] (32 bytes)
     <zero pad to 2048 bytes>
 
 This data is variable size but for simplicity is written to a fixed size buffer of 2048 bytes. Unused bytes are zero padded.

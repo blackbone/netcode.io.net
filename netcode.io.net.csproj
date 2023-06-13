@@ -13,7 +13,7 @@
         <Optimize>true</Optimize>
         <PublishTrimmed>true</PublishTrimmed>
         <DefineConstants>TRACE;</DefineConstants>
-        <DebugType>none</DebugType>
+        <DebugType>portable</DebugType>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     </PropertyGroup>
 
