@@ -1,10 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>netstandard2.1</TargetFramework>
+        <TargetFramework>net7.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>disable</Nullable>
-        <LangVersion>10</LangVersion>
+        <LangVersion>11</LangVersion>
         <RootNamespace>NetcodeIO.NET</RootNamespace>
     </PropertyGroup>
 
@@ -12,7 +12,7 @@
         <NoWarn>1701;1702;IL2121;3001;3003;3002;IL2121</NoWarn>
         <Optimize>true</Optimize>
         <PublishTrimmed>true</PublishTrimmed>
-        <DefineConstants>TRACE;</DefineConstants>
+        <DefineConstants>TRACE;COMPACT</DefineConstants>
         <DebugType>portable</DebugType>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     </PropertyGroup>
@@ -22,7 +22,7 @@
         <DebugType>none</DebugType>
         <Optimize>true</Optimize>
         <PublishTrimmed>true</PublishTrimmed>
-        <DefineConstants>TRACE;</DefineConstants>
+        <DefineConstants>TRACE;COMPACT</DefineConstants>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     </PropertyGroup>
 

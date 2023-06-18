@@ -1,9 +1,9 @@
 ﻿namespace NetcodeIO.NET.Core.Token
 {
-    internal enum NetcodeAddressType : byte
+    internal enum AddressType : byte
     {
         None = 0,
-        IPv4 = 1,
-        IPv6 = 2
+        IPv4 = 4,
+        IPv6 = 16
     }
 }

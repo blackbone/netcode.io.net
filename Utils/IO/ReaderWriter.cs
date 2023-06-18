@@ -1,34 +1,39 @@
 using System.Text;
+using NetcodeIO.NET.Core.Requests;
 using NetcodeIO.NET.Core.Token;
 
 namespace NetcodeIO.NET.Utils.IO
 {
-    internal unsafe struct ReaderWriter : IDisposable
+    internal ref struct ReaderWriter
     {
-        private byte* payload;
-        private int size;
+        private readonly Span<byte> payload;
         private int position;
-        
-        public ReaderWriter(byte* payload, int size, int position = 0)
+
+        public int Position => position;
+        public int Size => payload.Length;
+        public int Remaining => Size - Position;
+
+        public ReaderWriter(Span<byte> payload, int position = 0)
         {
             this.payload = payload;
-            this.size = size;
             this.position = position;
         }
-
+        
         public ReaderWriter(byte[] payload, int position = 0)
         {
-            this.size = payload.Length;
+            this.payload = payload;
             this.position = position;
-            fixed (byte* p = &payload[position])
-                this.payload = p;
         }
-
-
-        public void Skip(int count) => position += count;
         
-        public void Read(out NetcodeAddressType value) => value = (NetcodeAddressType)payload[position++];
-        public void Write(in NetcodeAddressType value) => payload[position++] = (byte)value;
+        public void Skip(uint count) => position += (int)count;
+        public void Reset() => position = 0;
+        
+        public void Read(out PayloadFlags value) => value = (PayloadFlags)payload[position++];
+        public void Write(in PayloadFlags value) => payload[position++] = (byte)value;
+        public void Read(out PacketType value) => value = (PacketType)payload[position++];
+        public void Write(in PacketType value) => payload[position++] = (byte)value;
+        public void Read(out AddressType value) => value = (AddressType)payload[position++];
+        public void Write(in AddressType value) => payload[position++] = (byte)value;
         
         public void Read(out byte value) => value = payload[position++];
         public void Write(in byte value) => payload[position++] = value;
@@ -128,31 +133,31 @@ namespace NetcodeIO.NET.Utils.IO
         
         public void Read(in Span<byte> target)
         {
-            for (var i = 0; i < target.Length; i++)
-                target[i] = payload[position++];
+            payload[new Range(position, position + target.Length)].CopyTo(target[new Range(0, target.Length)]);
+            position += target.Length;
         }
         
         public void Write(in Span<byte> target)
         {
-            for (var i = 0; i < target.Length; i++)
-                payload[position++] = target[i];
+            target[new Range(0, target.Length)].CopyTo(payload[new Range(position, position + target.Length)]);
+            position += target.Length;
         }
 
-        public void Read(byte* target, int count)
+        public void Read(Span<byte> target, int count)
         {
-            for (var i = 0; i < count; i++)
-                target[i] = payload[position++];
+            payload[new Range(position, position + count)].CopyTo(target[new Range(0, count)]);
+            position += count;
         }
         
-        public void Write(byte* target, int count)
+        public void Write(Span<byte> target, int count)
         {
-            for (var i = 0; i < count; i++)
-                payload[position++] = target[i];
+            target[new Range(0, count)].CopyTo(payload[new Range(position, position + count)]);
+            position += count;
         }
 
         public void Read(out string value, int length)
         {
-            value = Encoding.ASCII.GetString(&payload[position], length);
+            value = Encoding.ASCII.GetString(payload[new Range(position, position + length)]);
             position += length;
         }
 
@@ -160,13 +165,6 @@ namespace NetcodeIO.NET.Utils.IO
         {
             foreach (var c in value)
                 payload[position++] = (byte)(c & 0xFF);
-        } 
-        
-        public void Dispose()
-        {
-            payload = null;
-            size = 0;
-            position = 0;
         }
     }
 }

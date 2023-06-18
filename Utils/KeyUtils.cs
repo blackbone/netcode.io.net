@@ -1,4 +1,4 @@
-﻿using System.Security.Cryptography;
+﻿using System.Runtime.CompilerServices;
 
 namespace NetcodeIO.NET.Utils
 {
@@ -7,20 +7,22 @@ namespace NetcodeIO.NET.Utils
     /// </summary>
     public static class KeyUtils
     {
-        public static unsafe void GenerateKey(byte* keyBuffer, int length)
+        [ThreadStatic] private static Random random;
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void GenerateKey(in Span<byte> keyBuffer)
         {
-            if (length > 1024) throw new ArgumentException();
+            if (keyBuffer.Length > 1024) throw new ArgumentException();
             
-            var span = new Span<byte>(keyBuffer, length);
-            RandomNumberGenerator.Create().GetNonZeroBytes(span);
+            random ??= new Random((int)DateTimeOffset.Now.UtcTicks);
+            random.NextBytes(keyBuffer);
         }
         
-        public static unsafe void CopyKey(byte* from, byte* to, int length)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void CopyKey(Span<byte> from, Span<byte> to)
         {
-            if (length > 1024) throw new ArgumentException();
-
-            while (length-- >= 0)
-                to[length] = from[length];
+            if (from.Length > to.Length) throw new ArgumentOutOfRangeException(nameof(from.Length));
+            from.TryCopyTo(to);
         }
     }
 }

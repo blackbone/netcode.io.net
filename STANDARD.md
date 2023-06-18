@@ -82,7 +82,7 @@ Encryption of the private connect token data is performed with the libsodium AEA
     [protocol id] (uint64)          // 64 bit value unique to this particular game/application
     [expire timestamp] (uint64)     // 64 bit unix timestamp when this connect token expires
 
-The nonce used for encryption is a 24 bytes number that is randomly generated for every token.
+The nonce used for encryption is a 12 bytes number that is randomly generated for every token.
 
 Encryption is performed on the first 1024 - 16 bytes in the buffer, leaving the last 16 bytes to store the HMAC:
 
@@ -93,16 +93,16 @@ Post encryption, this is referred to as the _encrypted private connect token dat
 
 Together the public and private data form a _connect token_:
 
-    [version info] (13 bytes)       // "NETCODE 1.02" ASCII with null terminator.
-    [protocol id] (uint64)          // 64 bit value unique to this particular game/application
-    [create timestamp] (uint64)     // 64 bit unix timestamp when this connect token was created
-    [expire timestamp] (uint64)     // 64 bit unix timestamp when this connect token expires
-    [connect token nonce] (24 bytes)
+    [version info] (13 bytes)        // "NETCODE 1.02" ASCII with null terminator.
+    [protocol id] (uint64)           // 64 bit value unique to this particular game/application
+    [create timestamp] (uint64)      // 64 bit unix timestamp when this connect token was created
+    [expire timestamp] (uint64)      // 64 bit unix timestamp when this connect token expires
+    [connect token nonce] (12 bytes) // nonce is 12 bytes during to encrytion code limitations
     [encrypted private connect token data] (512 bytes)
     [timeout seconds] (uint32)      // timeout in seconds. negative values disable timeout (dev only)
     [client to server key] (32 bytes)
     [server to client key] (32 bytes)
-    [num_server_addresses] (uint32) // in [1,32]
+    [num_server_addresses] (uint16) // in [1,10]
     <for each server address>
     {
         [address_type] (uint8) // value of 1 = IPv4 address, 2 = IPv6 address.
@@ -129,7 +129,7 @@ Together the public and private data form a _connect token_:
             [port] (uint16)
         }
     }
-    <zero pad to 2048 bytes>
+    <zero pad to 1024 (was 2048) bytes>
 
 This data is variable size but for simplicity is written to a fixed size buffer of 2048 bytes. Unused bytes are zero padded.
 
@@ -170,8 +170,8 @@ The first packet type _connection request packet_ (0) is not encrypted and has t
     [version info] (13 bytes)       // "NETCODE 1.02" ASCII with null terminator.
     [protocol id] (8 bytes)
     [connect token expire timestamp] (8 bytes)
-    [connect token nonce] (24 bytes)
-    [encrypted private connect token data] (1024 bytes)
+    [connect token nonce] (12 bytes)
+    [encrypted private connect token data] (512 bytes)
     
 All other packet types are encrypted. 
 
@@ -406,7 +406,7 @@ When a server receives a connection request packet from a client it contains the
     [version info] (13 bytes)       // "NETCODE 1.02" ASCII with null terminator.
     [protocol id] (8 bytes)
     [connect token expire timestamp] (8 bytes)
-    [connect token nonce] (24 bytes)
+    [connect token nonce] (12 bytes)
     [encrypted private connect token data] (1024 bytes)
 
 This packet is not encrypted, however:

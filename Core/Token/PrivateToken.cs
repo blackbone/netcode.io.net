@@ -1,38 +1,64 @@
 using System.Net;
 using System.Runtime.InteropServices;
-using NetcodeIO.NET.Core.Datagram;
 using NetcodeIO.NET.Utils.IO;
 
 namespace NetcodeIO.NET.Core.Token
 {
-    [StructLayout(LayoutKind.Sequential)]
-    internal unsafe struct PrivateNetcodeToken
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    internal unsafe struct PrivateToken
     {
-        public const int SIZE = 512;
+        public const int SIZE = 8 + 4 + Defines.KEY_SIZE + Defines.KEY_SIZE + Defines.USER_DATA_SIZE + 2 + ServerEntry.SIZE * Defines.MAX_SERVERS;
         
         public ulong ClientId; // 8
         public uint TimeoutSeconds; // 4
-        public fixed byte ClientToServerKey[Defines.KEY_SIZE]; // 32
-        public fixed byte ServerToClientKey[Defines.KEY_SIZE]; // 32
-        public fixed byte UserData[Defines.USER_DATA_SIZE]; // 256
-        // at this point we have 332b
+        private fixed byte clientToServerKey[Defines.KEY_SIZE]; // 32
+        private fixed byte serverToClientKey[Defines.KEY_SIZE]; // 32
+        private fixed byte userData[Defines.USER_DATA_SIZE]; // 256
+        // at this point we have 334b
         
         public ushort NumServers; // in 1 - 10, 2 bytes
         // at this point we have 334b and (512 - 334) 178 bytes for servers addresses which is 10 slots
         // size of also can vary in size from 7 to 19 bytes but for optimization purposes we'll use 17 bytes explicit layout
         // due to C# limitations define them explicitly 
-        private NetcodeServerEntry server1; // 19
-        private NetcodeServerEntry server2; // 19
-        private NetcodeServerEntry server3; // 19
-        private NetcodeServerEntry server4; // 19
-        private NetcodeServerEntry server5; // 19
-        private NetcodeServerEntry server6; // 19
-        private NetcodeServerEntry server7; // 19
-        private NetcodeServerEntry server8; // 19
-        private NetcodeServerEntry server9; // 19
-        private NetcodeServerEntry server10; // 19
+        private ServerEntry server1; // 19
+        private ServerEntry server2; // 19
+        private ServerEntry server3; // 19
+        private ServerEntry server4; // 19
+        private ServerEntry server5; // 19
+        private ServerEntry server6; // 19
+        private ServerEntry server7; // 19
+        private ServerEntry server8; // 19
+        private ServerEntry server9; // 19
+
+        public Span<byte> ClientToServerKey
+        {
+            get
+            {
+                fixed(byte* p = clientToServerKey)
+                    return new Span<byte>(p, Defines.KEY_SIZE);
+            }
+        }
+        
+        public Span<byte> ServerToClientKey
+        {
+            get
+            {
+                fixed(byte* p = serverToClientKey)
+                    return new Span<byte>(p, Defines.KEY_SIZE);
+            }
+        }
+
+        public Span<byte> UserData
+        {
+            get
+            {
+                fixed(byte* p = userData)
+                    return new Span<byte>(p, Defines.USER_DATA_SIZE);
+            }
+        }
+
         // and give access by method
-        public NetcodeServerEntry GetServer(int index)
+        public ServerEntry GetServer(int index)
         {
             switch (index)
             {
@@ -45,7 +71,6 @@ namespace NetcodeIO.NET.Core.Token
                 case 6: return server7;
                 case 7: return server8;
                 case 8: return server9;
-                case 9: return server10;
                 default: throw new IndexOutOfRangeException();
             }
         }
@@ -63,7 +88,6 @@ namespace NetcodeIO.NET.Core.Token
                 case 6: server7.Fill(endPoint); break;
                 case 7: server8.Fill(endPoint); break;
                 case 8: server9.Fill(endPoint); break;
-                case 9: server10.Fill(endPoint); break;
                 default: throw new IndexOutOfRangeException();
             }
         }
@@ -72,9 +96,9 @@ namespace NetcodeIO.NET.Core.Token
         {
             reader.Read(out ClientId);
             reader.Read(out TimeoutSeconds);
-            fixed(byte* p = ClientToServerKey) reader.Read(p, Defines.KEY_SIZE);
-            fixed(byte* p = ServerToClientKey) reader.Read(p, Defines.KEY_SIZE);
-            fixed(byte* p = UserData) reader.Read(p, Defines.USER_DATA_SIZE);
+            reader.Read(ClientToServerKey);
+            reader.Read(ServerToClientKey);
+            reader.Read(UserData);
             reader.Read(out NumServers);
             // because we always have bytes but sometimes filled with zeroes we can simply bypass this thing
             server1.Read(ref reader);
@@ -86,7 +110,6 @@ namespace NetcodeIO.NET.Core.Token
             server7.Read(ref reader);
             server8.Read(ref reader);
             server9.Read(ref reader);
-            server10.Read(ref reader);
             return true;
         }
 
@@ -94,9 +117,9 @@ namespace NetcodeIO.NET.Core.Token
         {
             writer.Write(ClientId);
             writer.Write(TimeoutSeconds);
-            fixed(byte* p = ClientToServerKey) writer.Write(p, Defines.KEY_SIZE);
-            fixed(byte* p = ServerToClientKey) writer.Write(p, Defines.KEY_SIZE);
-            fixed(byte* p = UserData) writer.Write(p, Defines.USER_DATA_SIZE);
+            writer.Write(ClientToServerKey);
+            writer.Write(ServerToClientKey);
+            writer.Write(UserData);
             writer.Write(NumServers);
             // because we always have bytes but sometimes filled with zeroes we can simply bypass this thing
             server1.Write(ref writer);
@@ -108,7 +131,6 @@ namespace NetcodeIO.NET.Core.Token
             server7.Write(ref writer);
             server8.Write(ref writer);
             server9.Write(ref writer);
-            server10.Write(ref writer);
             return true;
         }
     }
