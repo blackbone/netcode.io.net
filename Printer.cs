@@ -3,7 +3,7 @@ using System.Reflection.Emit;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
 
-namespace NetcodeIO.NET
+namespace Netcode.io
 {
     public struct Printer
     {

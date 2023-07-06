@@ -1,0 +1,7 @@
+{
+  "name": "Netcode.io.Editor",
+  "rootNamespace": "Netcode.io.Editor",
+  "references": [
+    "GUID:1491147abca9d7d4bb7105af628b223e"
+  ]
+}
